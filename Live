@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Streaming TV</title>
+  <!-- Favicon -->
+  <link rel="icon" href="https://i.ibb.co/C73vPcx/favicon-32x32.png" type="image/png">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom, #1e3c72, #2a5298);
+      color: #fff;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background-color: #000;
+    }
+    header img {
+      width: 40px;
+      height: auto;
+      margin-right: 10px;
+    }
+    header h1 {
+      font-size: 20px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+    }
+    .tab-menu {
+      display: flex;
+      justify-content: center;
+      background-color: #333;
+      border-bottom: 2px solid #444;
+    }
+    .tab-menu button {
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s ease;
+    }
+    .tab-menu button:hover,
+    .tab-menu button.active {
+      background-color: #007bff;
+    }
+    .tab-content {
+      display: none;
+      padding: 20px;
+      text-align: center;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .schedule-container {
+      text-align: left;
+      margin: 20px auto;
+      padding: 20px;
+      max-width: 600px;
+      background: #444;
+      border-radius: 8px;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+    }
+    .schedule-container table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .schedule-container table th,
+    .schedule-container table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #555;
+    }
+    .schedule-container table th {
+      background-color: #333;
+    }
+    footer {
+      text-align: center;
+      padding: 10px;
+      background: #000;
+      color: #fff;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>
+      <img src="https://i.ibb.co/yXPkw9C/android-chrome-192x192.png" alt="Logo">
+      Live Streaming TV
+    </h1>
+  </header>
+
+  <!-- Tab Menu -->
+  <div class="tab-menu">
+    <button class="tab-link active" data-tab="live">Live TV</button>
+    <button class="tab-link" data-tab="schedule">Jadwal</button>
+    <button class="tab-link" data-tab="donate">Donasi</button>
+  </div>
+
+  <!-- Tab Content -->
+  <div id="live" class="tab-content active">
+    <div class="tv-frame">
+      <video controls>
+        <source src="https://ssh101stream.ssh101.com/akamaissh101/ssh101/tvjkmn9/playlist.m3u8" type="application/x-mpegURL">
+        Browser Anda tidak mendukung video streaming.
+      </video>
+    </div>
+  </div>
+
+  <div id="schedule" class="tab-content">
+    <div class="schedule-container">
+      <h2>Jadwal Acara</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Waktu</th>
+            <th>Acara</th>
+          </tr>
+        </thead>
+        <tbody id="schedule-body">
+          <!-- Data dari Google Sheets akan dimuat di sini -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="donate" class="tab-content">
+    <h2>Donasi</h2>
+    <p>Dukung kami dengan donasi melalui tautan berikut:</p>
+    <a href="https://trakteer.id/alfinoyaaaa/tip" target="_blank" class="donate-btn" style="color: #ff5722;">Klik di sini untuk Donasi</a>
+  </div>
+
+  <footer>
+    &copy; 2025 Live Streaming TV. All rights reserved.
+  </footer>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab-link');
+    const contents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        contents.forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    const sheetID = "1oG_eIeeIERsMpp-Hw1Jx9LvfLYpZVk-foxNCRu13Z2Y";
+    const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
+
+    fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.text();
+      })
+      .then(data => {
+        const json = JSON.parse(data.substring(47, data.length - 2));
+        const rows = json.table.rows;
+        const scheduleBody = document.getElementById('schedule-body');
+        let output = "";
+
+        if (rows.length === 0) {
+          output = `<tr><td colspan="2">Jadwal tidak tersedia</td></tr>`;
+        } else {
+          rows.forEach(row => {
+            const time = row.c[0]?.v || "Tidak ada waktu";
+            const event = row.c[1]?.v || "Tidak ada acara";
+            output += `<tr><td>${time}</td><td>${event}</td></tr>`;
+          });
+        }
+
+        scheduleBody.innerHTML = output;
+      })
+      .catch(error => {
+        console.error("Error fetching Google Sheets data:", error);
+        const scheduleBody = document.getElementById('schedule-body');
+        scheduleBody.innerHTML = `<tr><td colspan="2">Gagal memuat jadwal. Silakan coba lagi nanti.</td></tr>`;
+      });
+  </script>
+</body>
+</html>
